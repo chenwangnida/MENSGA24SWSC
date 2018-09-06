@@ -34,12 +34,27 @@ public class WSCSamplingPipeline extends BreedingPipeline {
 
 	public int produce(int min, int max, int start, int subpopulation, Individual[] inds, EvolutionState state,
 			int thread) {
+		
+		int n = sources[0].produce(min, max, start, subpopulation, inds, state, thread);
 
-		WSCInitializer init = (WSCInitializer) state.initializer;
+        if (!(sources[0] instanceof BreedingPipeline)) {
+            for(int q=start;q<n+start;q++)
+                inds[q] = (Individual)(inds[q].clone());
+        }
 
-		// obtain the subproblem representative
+        if (!(inds[start] instanceof SequenceVectorIndividual))
+            // uh oh, wrong kind of individual
+            state.output.fatal("WSCSamplingPipeline didn't get a SequenceVectorIndividual. The offending individual is in subpopulation "
+            + subpopulation + " and it's:" + inds[start]);
 
-		SequenceVectorIndividual bestNeighbour = (SequenceVectorIndividual) inds[start].clone();
+        WSCInitializer init = (WSCInitializer) state.initializer;
+
+        // Perform mutation
+        SequenceVectorIndividual bestNeighbour = null;
+        for(int q=start;q<n+start;q++) {
+        	bestNeighbour = (SequenceVectorIndividual)inds[q];
+        }
+		
 
 		double bestScore = init.calculateTchebycheffScore(bestNeighbour, start);
 		bestNeighbour.setTchebycheffScore(bestScore);
@@ -48,11 +63,11 @@ public class WSCSamplingPipeline extends BreedingPipeline {
 			WSCInitializer.pop_updated.clear();
 		}
 
-		// learn NHM from subproblem, but it is penalized on based the tchebycheff score
+		// learn NHM from subproblem, but it is penalized on based the cosine similarity
 		WSCInitializer.pop_updated = sampleNeighbors(init, start, state);
 
 		for (int i = 0; i < WSCInitializer.pop_updated.size(); i++) {
-			SequenceVectorIndividual neighbour = (SequenceVectorIndividual) inds[start].clone();
+			SequenceVectorIndividual neighbour = bestNeighbour.clone();
 			updatedIndi(neighbour.genome, WSCInitializer.pop_updated.get(i));
 
 			// Calculate fitness of neighbor
@@ -71,7 +86,7 @@ public class WSCSamplingPipeline extends BreedingPipeline {
 		inds[start] = bestNeighbour;
 		inds[start].evaluated = false;
 
-		return 1;
+		return n;
 	}
 
 	private List<int[]> sampleNeighbors(WSCInitializer init, int start, EvolutionState state) {
