@@ -63,6 +63,6 @@ pop.subpop.0.species.pipe.source.2.source.0	   = ec.select.TournamentSelection
 select.tournament.size                         = 2
 
 tchebycheff = true
-numNeighbours = 100
+numNeighbours = 500
 numLocalSearchTries = 30
 localSearchBound = 40

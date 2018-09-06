@@ -16,6 +16,7 @@ import wsc.nhbsa.NHBSA;
 import wsc.problem.WSCInitializer;
 
 import ec.Subpopulation;
+import ec.multiobjective.MultiObjectiveFitness;
 
 public class WSCSamplingPipeline extends BreedingPipeline {
 
@@ -81,37 +82,38 @@ public class WSCSamplingPipeline extends BreedingPipeline {
 
 		int[][] m_generation = new int[WSCInitializer.numNeighbours][WSCInitializer.dimension_size];
 
-		int subproblem[] = init.neighbourhood[start];
-		double tchebycheffScores[] = new double[WSCInitializer.numNeighbours];
-		double normalizedTchebycheffScores[] = new double[WSCInitializer.numNeighbours];
+		double consinSimilarity[] = new double[WSCInitializer.numNeighbours];
 
-		for (int m = 0; m < subproblem.length; m++) {
-			tchebycheffScores[m] = ((SequenceVectorIndividual) (pop.individuals[subproblem[m]])).getTchebycheffScore();
+		for (int m = 0; m < WSCInitializer.numNeighbours; m++) {
+
+			MultiObjectiveFitness fit = (MultiObjectiveFitness) pop.individuals[m].fitness;
+			double[] array = { fit.getObjective(0), fit.getObjective(1) };
+			consinSimilarity[m] = cosineSimilarity(array, init.weights[start]);
 
 			for (int n = 0; n < WSCInitializer.dimension_size; n++) {
-				m_generation[m][n] = ((SequenceVectorIndividual) (pop.individuals[subproblem[m]])).serQueue.get(n);
+				m_generation[m][n] = ((SequenceVectorIndividual) (pop.individuals[m])).serQueue.get(n);
 			}
 		}
-		// Normalize tchebycheffArray
-		normalizeTchebycheff4Subproblem(tchebycheffScores, normalizedTchebycheffScores);
 
 		nhbsa.setM_pop(m_generation);
 		nhbsa.setM_L(WSCInitializer.dimension_size);
 		nhbsa.setM_N(WSCInitializer.numNeighbours);
-		nhbsa.setNormalizedTchebycheffScores(normalizedTchebycheffScores);
+		nhbsa.setNormalizedConsineSIM(consinSimilarity);
 
 		// Sample numLocalSearchTries number of neighbors
 		return nhbsa.sampling4NHBSA(WSCInitializer.numLocalSearchTries, WSCInitializer.random);
 	}
 
-	private void normalizeTchebycheff4Subproblem(double[] tchebycheffScores, double[] normalizedTchebycheffScores) {
-		for (int i = 0; i < tchebycheffScores.length; i++) {
-			double min = Doubles.min(tchebycheffScores);
-			double max = Doubles.max(tchebycheffScores);
-			// lower score has higher influence on frequency
-			normalizedTchebycheffScores[i] = (max - tchebycheffScores[i]) / (max - min);
+	public static double cosineSimilarity(double[] vectorA, double[] vectorB) {
+		double dotProduct = 0.0;
+		double normA = 0.0;
+		double normB = 0.0;
+		for (int i = 0; i < vectorA.length; i++) {
+			dotProduct += vectorA[i] * vectorB[i];
+			normA += Math.pow(vectorA[i], 2);
+			normB += Math.pow(vectorB[i], 2);
 		}
-
+		return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 	}
 
 	private void updatedIndi(Service[] genome, int[] updateIndi) {

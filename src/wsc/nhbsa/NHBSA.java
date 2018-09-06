@@ -25,7 +25,7 @@ public class NHBSA {
 	private double m_bRatio;// a bias for NHM
 	double Pls = 0.1; // probability of local search
 
-	double[] normalizedTchebycheffScores = new double[WSCInitializer.numNeighbours];
+	double[] normalizedConsineSIM = new double[WSCInitializer.numNeighbours];
 
 	// settings for discount learning
 	boolean isDiscount = false; // true for considering the learning rate, false for no
@@ -91,7 +91,7 @@ public class NHBSA {
 				for (int i = 0; i < m_N; i++) {
 					if (m_pop[i][j] == node) {
 						// delta_sum += 1;
-						delta_sum += normalizedTchebycheffScores[i];// use normalized tchebycheffScores
+						delta_sum += normalizedConsineSIM[i];// use normalized tchebycheffScores
 					} else {
 						delta_sum += 0;
 					}
@@ -294,14 +294,16 @@ public class NHBSA {
 	public void setDiscountRate4Gen(List<Double> discountRate4Gen) {
 		this.discountRate4Gen = discountRate4Gen;
 	}
+	
 
-	public double[] getNormalizedTchebycheffScores() {
-		return normalizedTchebycheffScores;
+	public double[] getNormalizedConsineSIM() {
+		return normalizedConsineSIM;
 	}
 
-	public void setNormalizedTchebycheffScores(double[] normalizedTchebycheffScores) {
-		this.normalizedTchebycheffScores = normalizedTchebycheffScores;
+	public void setNormalizedConsineSIM(double[] normalizedConsineSIM) {
+		this.normalizedConsineSIM = normalizedConsineSIM;
 	}
+
 
 	public void printNHM(int[][] m_node) {
 		System.out.println("");

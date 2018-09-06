@@ -84,6 +84,7 @@ public class WSCInitializer extends SimpleInitializer {
 	public static double MAXINUM_MATCHTYPE = 1;
 	public static double MAXINUM_SEMANTICDISTANCE = 1;
 
+
 	// data
 	public static WSCRandom random;
 	public static List<String> taskInput;
