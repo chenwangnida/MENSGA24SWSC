@@ -2,11 +2,14 @@ package wsc.problem;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import ec.EvolutionState;
 import ec.Individual;
 import ec.Problem;
+import ec.Subpopulation;
 import ec.multiobjective.MultiObjectiveFitness;
 import ec.simple.SimpleProblemForm;
 import wsc.data.pool.InitialWSCPool;
@@ -26,20 +29,34 @@ public class WSCProblem extends Problem implements SimpleProblemForm {
 		if (!(ind instanceof SequenceVectorIndividual))
 			state.output.fatal("Whoa!  It's not a SequenceVectorIndividual!!!", null);
 
-		SequenceVectorIndividual ind2 = (SequenceVectorIndividual) ind;
+		SequenceVectorIndividual individual = (SequenceVectorIndividual) ind;
+		List<Integer> fullSerQueue = new ArrayList<Integer>();
+		List<Integer> usedSerQueue = new ArrayList<Integer>();
+
 		WSCInitializer init = (WSCInitializer) state.initializer;
 
 		// use ind2 to generate graph
 		InitialWSCPool.getServiceCandidates().clear();
-		List<Service> serviceCandidates = new ArrayList<Service>(Arrays.asList(ind2.genome));
+		List<Service> serviceCandidates = new ArrayList<Service>(Arrays.asList(individual.genome));
 		InitialWSCPool.setServiceCandidates(serviceCandidates);
 
-		ServiceGraph ind2_graph = init.graGenerator.generateGraphBySerQueue();
-		ind2.setStrRepresentation(ind2_graph.toString());
-		// evaluate updated updated_graph
-		init.eval.aggregationAttribute(ind2, ind2_graph);
+		ServiceGraph graph = init.graGenerator.generateGraph(fullSerQueue);
+		// create a queue of services according to breath first search
+		List<Integer> usedQueue = init.graGenerator.usedQueueofLayers("startNode", graph, usedSerQueue);
+		// set the position of the split position of the queue
+		individual.setSplitPosition(usedQueue.size()); // index from 0 to (splitposition-1)
 
-		((MultiObjectiveFitness) ind2.fitness).setObjectives(state, init.eval.calculateFitness(ind2));
-		ind2.evaluated = true;
+		// add unused queue to form a complete a vector-based individual
+		List<Integer> serQueue = init.graGenerator.completeSerQueueIndi(usedQueue, fullSerQueue);
+		// Set serQueue to individual(do I need deep clone ?)
+		individual.serQueue.addAll(serQueue);
+
+		individual.setStrRepresentation(graph.toString());
+		// evaluate updated updated_graph
+		init.eval.aggregationAttribute(individual, graph);
+
+		((MultiObjectiveFitness) individual.fitness).setObjectives(state, init.eval.calculateFitness(individual));
+		individual.evaluated = true;
 	}
+
 }
