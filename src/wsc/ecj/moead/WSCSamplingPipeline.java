@@ -1,10 +1,7 @@
 package wsc.ecj.moead;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import com.google.common.primitives.Doubles;
 
 import ec.BreedingPipeline;
 import ec.EvolutionState;
