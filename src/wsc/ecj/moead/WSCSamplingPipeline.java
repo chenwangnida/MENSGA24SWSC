@@ -2,6 +2,7 @@ package wsc.ecj.moead;
 
 import java.util.List;
 
+import com.google.common.collect.Iterators;
 
 import ec.BreedingPipeline;
 import ec.EvolutionState;
@@ -31,29 +32,38 @@ public class WSCSamplingPipeline extends BreedingPipeline {
 
 	public int produce(int min, int max, int start, int subpopulation, Individual[] inds, EvolutionState state,
 			int thread) {
-		
+
 		int n = sources[0].produce(min, max, start, subpopulation, inds, state, thread);
 
-        if (!(sources[0] instanceof BreedingPipeline)) {
-            for(int q=start;q<n+start;q++)
-                inds[q] = (Individual)(inds[q].clone());
-        }
+		int subproblem  = -1;
 
-        if (!(inds[start] instanceof SequenceVectorIndividual))
-            // uh oh, wrong kind of individual
-            state.output.fatal("WSCSamplingPipeline didn't get a SequenceVectorIndividual. The offending individual is in subpopulation "
-            + subpopulation + " and it's:" + inds[start]);
+		if (!(sources[0] instanceof BreedingPipeline)) {
+			for (int q = start; q < n + start; q++) {
 
-        WSCInitializer init = (WSCInitializer) state.initializer;
+				subproblem = Iterators.indexOf(Iterators.forArray(state.population.subpops[0].individuals),
+						x -> x.equals(inds[start]));
 
-        // Perform mutation
-        SequenceVectorIndividual bestNeighbour = null;
-        for(int q=start;q<n+start;q++) {
-        	bestNeighbour = (SequenceVectorIndividual)inds[q];
-        }
-		
+				inds[q] = (Individual) (inds[q].clone());
+			}
+		}
 
-		double bestScore = init.calculateTchebycheffScore(bestNeighbour, start);
+		if (!(inds[start] instanceof SequenceVectorIndividual))
+			// uh oh, wrong kind of individual
+			state.output.fatal(
+					"WSCSamplingPipeline didn't get a SequenceVectorIndividual. The offending individual is in subpopulation "
+							+ subpopulation + " and it's:" + inds[start]);
+
+		SequenceVectorIndividual bestNeighbour = null;
+		for (int q = start; q < n + start; q++) {
+			bestNeighbour = (SequenceVectorIndividual) inds[q];
+		}
+
+		WSCInitializer init = (WSCInitializer) state.initializer;
+
+		// SequenceVectorIndividual bestNeighbour = (SequenceVectorIndividual)
+		// inds[start].clone();
+
+		double bestScore = init.calculateTchebycheffScore(bestNeighbour, subproblem);
 		bestNeighbour.setTchebycheffScore(bestScore);
 
 		if (WSCInitializer.pop_updated != null) {
@@ -61,7 +71,7 @@ public class WSCSamplingPipeline extends BreedingPipeline {
 		}
 
 		// learn NHM from subproblem, but it is penalized on based the cosine similarity
-		WSCInitializer.pop_updated = sampleNeighbors(init, start, state);
+		WSCInitializer.pop_updated = sampleNeighbors(init, subproblem, state);
 
 		for (int i = 0; i < WSCInitializer.pop_updated.size(); i++) {
 			SequenceVectorIndividual neighbour = bestNeighbour.clone();
@@ -71,7 +81,7 @@ public class WSCSamplingPipeline extends BreedingPipeline {
 			neighbour.calculateSequenceFitness(neighbour, init, state);
 
 			// Calculate tchebycheffScore
-			double score = init.calculateTchebycheffScore(neighbour, start);
+			double score = init.calculateTchebycheffScore(neighbour, subproblem);
 			bestNeighbour.setTchebycheffScore(score);
 			if (score < bestScore) {
 				bestScore = score;
@@ -86,7 +96,7 @@ public class WSCSamplingPipeline extends BreedingPipeline {
 		return n;
 	}
 
-	private List<int[]> sampleNeighbors(WSCInitializer init, int start, EvolutionState state) {
+	private List<int[]> sampleNeighbors(WSCInitializer init, int subproblem, EvolutionState state) {
 		// Get population
 		Subpopulation pop = state.population.subpops[0];
 		// System.out.println("learn a NHM from a pop size: " + pop.individuals.length);
@@ -100,7 +110,7 @@ public class WSCSamplingPipeline extends BreedingPipeline {
 
 			MultiObjectiveFitness fit = (MultiObjectiveFitness) pop.individuals[m].fitness;
 			double[] array = { fit.getObjective(0), fit.getObjective(1) };
-			consinSimilarity[m] = cosineSimilarity(array, init.weights[start]);
+			consinSimilarity[m] = cosineSimilarity(array, init.weights[subproblem]);
 
 			for (int n = 0; n < WSCInitializer.dimension_size; n++) {
 				m_generation[m][n] = ((SequenceVectorIndividual) (pop.individuals[m])).serQueue.get(n);
