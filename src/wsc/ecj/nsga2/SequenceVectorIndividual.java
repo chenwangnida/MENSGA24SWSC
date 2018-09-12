@@ -27,9 +27,9 @@ public class SequenceVectorIndividual extends VectorIndividual {
 	private double TchebycheffScore;
 
 	private int splitPosition;
-	public List<Integer> serQueue = new ArrayList<Integer>(); // after encoding
 
 	public Service[] genome; // before encoding
+	public List<Integer> serQueue = new ArrayList<Integer>(); // after encoding
 
 	private String strRepresentation; // a string of graph-based representation
 
@@ -114,6 +114,9 @@ public class SequenceVectorIndividual extends VectorIndividual {
 		// add unused queue to form a complete a vector-based individual
 		List<Integer> serQueue = init.graGenerator.completeSerQueueIndi(usedQueue, fullSerQueue);
 		// Set serQueue to individual(do I need deep clone ?)
+		if (ind2.serQueue != null) {
+			ind2.serQueue.clear();
+		}
 		ind2.serQueue.addAll(serQueue);
 
 		ind2.setStrRepresentation(graph.toString());
@@ -122,7 +125,6 @@ public class SequenceVectorIndividual extends VectorIndividual {
 
 		((MultiObjectiveFitness) ind2.fitness).setObjectives(state, init.eval.calculateFitness(ind2));
 		ind2.evaluated = true;
-		
 	}
 
 	public void setAvailability(double availability) {
